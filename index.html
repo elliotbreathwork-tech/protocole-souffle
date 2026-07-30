@@ -1,0 +1,621 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SOUFFLE — Le protocole</title>
+<meta name="author" content="Elliot Amaru">
+<meta name="description" content="Trois exercices de respiration, cinq minutes par jour, sept jours. Version à lire sur téléphone.">
+<meta name="theme-color" content="#1D4E89">
+<style>
+  html{background:#FFFFFF;}
+  @media (prefers-color-scheme: dark){ html{background:#0B0E12;} }
+  body{margin:0;}
+</style>
+<style>
+  :root{
+    --ink:#0E1216; --ink-2:#39434E; --ink-3:#6A757F; --ink-4:#98A2AC; --ink-5:#B8C0C8;
+    --paper:#FFFFFF; --paper-2:#FBFCFD; --paper-3:#F4F6F8; --paper-4:#ECEFF2;
+    --rule:#E2E7EB; --rule-soft:#EFF2F5; --rule-firm:#CFD6DD;
+    --accent:#1D4E89; --accent-2:#3A6FA8; --accent-3:#7FA3C7; --accent-wash:#EEF3F9; --accent-line:#D3E0EE;
+    --pos:#0E6B4F; --pos-wash:#E9F3EF; --pos-line:#C9E2D8;
+    --warn:#8A5A18; --warn-wash:#FBF5EA; --warn-line:#EADCC4;
+    --neg:#8B3033; --neg-wash:#FBEFEF; --neg-line:#EDD3D3;
+    --sans: system-ui, -apple-system, "Helvetica Neue", "Avenir Next", sans-serif;
+    --serif: Charter, "Iowan Old Style", "Hoefler Text", Georgia, serif;
+    --r-sm:10px; --r:16px; --r-lg:22px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ink:#F2F4F6; --ink-2:#C7CFD6; --ink-3:#98A2AC; --ink-4:#6A757F; --ink-5:#4B535B;
+      --paper:#0B0E12; --paper-2:#10141A; --paper-3:#161B22; --paper-4:#1D242C;
+      --rule:#262E38; --rule-soft:#1D242C; --rule-firm:#333D48;
+      --accent:#6B9FDA; --accent-2:#8BB4E2; --accent-3:#3A6FA8; --accent-wash:#152135; --accent-line:#233450;
+      --pos:#4FBE95; --pos-wash:#10261E; --pos-line:#1D3A2E;
+      --warn:#D9A857; --warn-wash:#2B2213; --warn-line:#3C3018;
+      --neg:#E08A8C; --neg-wash:#2B1516; --neg-line:#3C1E1F;
+      color-scheme: dark;
+    }
+  }
+
+  *{box-sizing:border-box;}
+  .souffle{
+    font-family:var(--sans); color:var(--ink); background:var(--paper);
+    -webkit-font-smoothing:antialiased; line-height:1.5;
+    max-width:560px; margin:0 auto; padding-bottom:64px;
+  }
+  .souffle h1,.souffle h2,.souffle h3{font-family:var(--serif); font-weight:600; text-wrap:balance; color:var(--ink);}
+  .souffle p{margin:0;}
+  .souffle a{color:var(--accent);}
+  .souffle .num{font-variant-numeric:tabular-nums;}
+
+  /* progress + nav */
+  .souffle .topbar{position:sticky; top:0; z-index:30; background:var(--paper);}
+  .souffle .progress{height:3px; background:var(--rule-soft);}
+  .souffle .progress__fill{height:100%; width:0%; background:var(--accent); transition:width .1s linear;}
+  .souffle .navrow{display:flex; gap:6px; overflow-x:auto; padding:10px 16px; scrollbar-width:none; border-bottom:1px solid var(--rule-soft); background:var(--paper);}
+  .souffle .navrow::-webkit-scrollbar{display:none;}
+  .souffle .navchip{flex:none; font-size:12.5px; font-weight:560; letter-spacing:.01em; color:var(--ink-3); background:var(--paper-3); border:1px solid var(--rule); border-radius:99px; padding:6px 13px; text-decoration:none; white-space:nowrap;}
+  .souffle .navchip:active{background:var(--accent-wash); color:var(--accent); border-color:var(--accent-line);}
+
+  /* hero */
+  .souffle .hero{padding:34px 20px 26px;}
+  .souffle .hero__k{font-size:11px; font-weight:660; letter-spacing:.13em; text-transform:uppercase; color:var(--accent);}
+  .souffle .hero__k::before{content:"●"; font-size:6px; vertical-align:2px; margin-right:6px; color:var(--accent-3);}
+  .souffle h1.wordmark{font-size:52px; letter-spacing:-.02em; margin-top:8px; line-height:.98;}
+  .souffle .hero__sub{font-family:var(--serif); font-size:19px; font-style:italic; color:var(--ink-2); margin-top:8px;}
+  .souffle .hero__lede{font-size:15.5px; line-height:1.6; color:var(--ink-2); margin-top:14px; max-width:46ch;}
+  .souffle .moments{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:22px;}
+  .souffle .moment{background:var(--paper-3); border:1px solid var(--rule-soft); border-radius:var(--r-sm); padding:10px 8px; text-align:center;}
+  .souffle .moment__t{font-size:9px; font-weight:660; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-4);}
+  .souffle .moment__n{font-family:var(--serif); font-size:15px; color:var(--ink); margin-top:3px;}
+  .souffle .stat-strip{display:flex; gap:18px; margin-top:22px; padding-top:18px; border-top:1px solid var(--rule-soft);}
+  .souffle .stat{flex:1;}
+  .souffle .stat__v{font-family:var(--serif); font-size:22px; color:var(--accent);}
+  .souffle .stat__d{font-size:10.5px; color:var(--ink-4); line-height:1.35; margin-top:2px;}
+
+  /* sections */
+  .souffle section.blk{padding:36px 20px; border-top:1px solid var(--rule-soft); scroll-margin-top:96px;}
+  .souffle section.blk.tint{background:var(--paper-3);}
+  .souffle .eyebrow{font-size:10.5px; font-weight:660; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-4); margin-bottom:6px;}
+  .souffle h2.h{font-size:25px; letter-spacing:-.01em; margin-bottom:8px;}
+  .souffle .lede{font-size:15px; line-height:1.58; color:var(--ink-2); margin-bottom:20px;}
+
+  /* rule cards */
+  .souffle .cards{display:flex; flex-direction:column; gap:10px;}
+  .souffle .card{background:var(--paper); border:1px solid var(--rule); border-radius:var(--r); padding:15px 16px;}
+  .souffle .card.soft{background:var(--paper-2);}
+  .souffle .card__k{font-family:var(--serif); font-size:16px; color:var(--accent-2); line-height:1;}
+  .souffle .card h4{font-size:14.5px; font-weight:640; margin:6px 0 4px; color:var(--ink);}
+  .souffle .card p{font-size:13.5px; line-height:1.52; color:var(--ink-3);}
+
+  .souffle .callout{border-radius:var(--r); padding:16px 17px; font-size:14px; line-height:1.55;}
+  .souffle .callout__t{display:block; font-size:11px; font-weight:660; letter-spacing:.04em; text-transform:uppercase; margin-bottom:6px;}
+  .souffle .callout.accent{background:var(--accent-wash); border:1px solid var(--accent-line); color:var(--ink-2);}
+  .souffle .callout.accent .callout__t{color:var(--accent);}
+  .souffle .callout.warn{background:var(--warn-wash); border:1px solid var(--warn-line); color:var(--ink-2);}
+  .souffle .callout.warn .callout__t{color:var(--warn);}
+  .souffle .callout.pos{background:var(--pos-wash); border:1px solid var(--pos-line); color:var(--ink-2);}
+  .souffle .callout.pos .callout__t{color:var(--pos);}
+  .souffle .callout + .callout{margin-top:10px;}
+  .souffle .callout strong{color:var(--ink);}
+
+  /* exercise chips */
+  .souffle .chips{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:18px 0;}
+  .souffle .chip{border-left:2.5px solid var(--accent-line); padding:2px 0 2px 10px;}
+  .souffle .chip__k{font-size:9.5px; font-weight:660; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-4);}
+  .souffle .chip__v{font-size:13px; color:var(--ink); margin-top:2px; line-height:1.35;}
+
+  .souffle .geste{background:var(--ink); color:rgba(255,255,255,.86); border-radius:var(--r); padding:17px 18px; font-size:15px; line-height:1.55; margin-bottom:18px;}
+  .souffle .geste .label{font-size:10.5px; font-weight:660; letter-spacing:.09em; text-transform:uppercase; color:rgba(255,255,255,.46); margin-bottom:6px;}
+  .souffle .geste strong{color:#fff;}
+  @media (prefers-color-scheme: dark){
+    .souffle .geste{background:var(--paper-4); color:var(--ink);}
+    .souffle .geste .label{color:var(--ink-4);}
+    .souffle .geste strong{color:var(--ink);}
+  }
+
+  /* pacer */
+  .souffle .pacer{background:var(--paper); border:1px solid var(--rule); border-radius:var(--r-lg); padding:22px 18px 20px; text-align:center; margin-bottom:18px;}
+  .souffle .pacer__stage{position:relative; height:150px; display:flex; align-items:center; justify-content:center; margin-bottom:14px;}
+  .souffle .pacer__ring{width:76px; height:76px; border-radius:50%; background:radial-gradient(circle at 32% 28%, var(--accent-3), var(--accent)); transform:scale(1); transition:transform 1s linear; box-shadow:0 0 0 1px var(--accent-line);}
+  .souffle .pacer__word{position:absolute; font-family:var(--serif); font-size:15px; color:var(--ink); font-style:italic;}
+  .souffle .pacer__count{position:absolute; bottom:0; font-size:11px; color:var(--ink-4); font-variant-numeric:tabular-nums;}
+  .souffle .pacer__row{display:flex; align-items:center; justify-content:center; gap:12px;}
+  .souffle .pacer__btn{font-family:var(--sans); font-size:13.5px; font-weight:600; color:var(--paper); background:var(--accent); border:none; border-radius:99px; padding:11px 22px; min-height:44px;}
+  .souffle .pacer__btn.ghost{background:transparent; color:var(--ink-3); border:1px solid var(--rule-firm);}
+  .souffle .pacer__cycles{font-size:11.5px; color:var(--ink-4); margin-top:10px;}
+  @media (prefers-reduced-motion: reduce){ .souffle .pacer__ring{transition:none;} }
+
+  .souffle h3.sub{font-size:16px; margin:22px 0 8px;}
+  .souffle ul.list{list-style:none; padding:0; margin:0;}
+  .souffle ul.list li{position:relative; padding-left:18px; font-size:13.5px; line-height:1.5; color:var(--ink-2);}
+  .souffle ul.list li + li{margin-top:8px;}
+  .souffle ul.list li::before{content:""; position:absolute; left:2px; top:7px; width:5px; height:5px; border-radius:50%; background:var(--accent-3);}
+
+  .souffle .steps{display:flex; flex-direction:column; gap:12px; margin-bottom:18px;}
+  .souffle .step{display:flex; gap:12px; align-items:flex-start;}
+  .souffle .step__n{flex:none; width:26px; height:26px; border-radius:50%; background:var(--accent-wash); color:var(--accent); border:1px solid var(--accent-line); font-size:12.5px; font-weight:660; display:flex; align-items:center; justify-content:center;}
+  .souffle .step p{font-size:14px; line-height:1.5; color:var(--ink-2); padding-top:3px;}
+  .souffle .step strong{color:var(--ink);}
+
+  .souffle .footnote{font-size:12.5px; line-height:1.55; color:var(--ink-3); padding-top:14px; border-top:1px solid var(--rule-soft); margin-top:18px;}
+  .souffle .footnote strong{color:var(--ink-2);}
+
+  .souffle .research{background:var(--paper); border:1px solid var(--rule); border-radius:var(--r); padding:16px 17px; margin-top:14px;}
+  .souffle .research h4{font-size:14px; font-weight:640; margin-bottom:6px;}
+  .souffle .research p{font-size:13.5px; line-height:1.52; color:var(--ink-3);}
+  .souffle .research .src{font-size:11.5px; color:var(--ink-4); margin-top:8px; font-style:italic;}
+
+  /* calendar tracker */
+  .souffle .tracker__head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;}
+  .souffle .tracker__prog{font-size:12.5px; color:var(--ink-4); font-variant-numeric:tabular-nums;}
+  .souffle .day{background:var(--paper); border:1px solid var(--rule); border-radius:var(--r); padding:13px 15px; margin-bottom:9px;}
+  .souffle .day__top{display:flex; align-items:center; justify-content:space-between; margin-bottom:9px;}
+  .souffle .day__t{font-family:var(--serif); font-size:15px; color:var(--ink);}
+  .souffle .day__hint{font-size:10.5px; color:var(--ink-4);}
+  .souffle .day__row{display:flex; gap:8px;}
+  .souffle .tick{flex:1; display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--ink-3); background:var(--paper-3); border:1px solid var(--rule-soft); border-radius:10px; padding:8px 9px; min-height:38px;}
+  .souffle .tick input{width:16px; height:16px; accent-color:var(--accent); flex:none;}
+  .souffle .tick.done{background:var(--pos-wash); border-color:var(--pos-line); color:var(--pos);}
+  .souffle .day__note{width:100%; margin-top:8px; font-family:var(--sans); font-size:12.5px; color:var(--ink-2); background:var(--paper-3); border:1px solid var(--rule-soft); border-radius:8px; padding:7px 9px;}
+  .souffle .day__note::placeholder{color:var(--ink-5);}
+
+  .souffle .marks{display:grid; grid-template-columns:1fr 1fr; gap:9px; margin:20px 0;}
+  .souffle .mark{background:var(--paper); border:1px solid var(--rule); border-radius:var(--r); padding:13px 14px;}
+  .souffle .mark.accent{background:var(--accent-wash); border-color:var(--accent-line);}
+  .souffle .mark h4{font-size:13px; font-weight:640; margin-bottom:4px;}
+  .souffle .mark p{font-size:12px; line-height:1.45; color:var(--ink-3);}
+
+  /* FAQ */
+  .souffle details.qa{border-top:1px solid var(--rule-soft); padding:14px 0;}
+  .souffle details.qa:first-of-type{border-top:none; padding-top:0;}
+  .souffle details.qa summary{list-style:none; font-family:var(--serif); font-size:15.5px; color:var(--ink); cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:10px;}
+  .souffle details.qa summary::-webkit-details-marker{display:none;}
+  .souffle details.qa summary::after{content:"+"; font-family:var(--sans); font-size:19px; font-weight:400; color:var(--ink-4); flex:none;}
+  .souffle details.qa[open] summary::after{content:"–";}
+  .souffle details.qa dd{font-size:13.5px; line-height:1.55; color:var(--ink-3); margin-top:9px;}
+
+  .souffle .verdicts{display:flex; flex-direction:column; gap:10px; margin-top:20px;}
+  .souffle .verdict{border-radius:var(--r); padding:15px 16px;}
+  .souffle .verdict.warn{background:var(--warn-wash); border:1px solid var(--warn-line);}
+  .souffle .verdict.pos{background:var(--pos-wash); border:1px solid var(--pos-line);}
+  .souffle .verdict h4{font-size:14px; margin-bottom:5px;}
+  .souffle .verdict.warn h4{color:var(--warn);}
+  .souffle .verdict.pos h4{color:var(--pos);}
+  .souffle .verdict p{font-size:13px; line-height:1.5; color:var(--ink-2);}
+
+  /* suite / contact */
+  .souffle .who{background:var(--paper); border:1px solid var(--rule); border-radius:var(--r); padding:15px 16px; margin-top:16px;}
+  .souffle .who .label{font-size:10.5px; font-weight:660; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-4); margin-bottom:6px;}
+  .souffle .who p{font-size:13.5px; line-height:1.52; color:var(--ink-3);}
+
+  .souffle .offers{display:flex; flex-direction:column; gap:10px; margin-top:18px;}
+  .souffle .offer{border:1px solid var(--rule); border-radius:var(--r); padding:16px 17px;}
+  .souffle .offer.hl{border-color:var(--accent-line); background:var(--accent-wash);}
+  .souffle .offer__top{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px;}
+  .souffle .offer__t{font-family:var(--serif); font-size:16px; color:var(--ink);}
+  .souffle .offer__v{font-family:var(--serif); font-size:22px; color:var(--accent);}
+  .souffle .offer p{font-size:13px; line-height:1.5; color:var(--ink-3);}
+
+  .souffle .contact{display:flex; flex-direction:column; gap:8px; margin-top:16px;}
+  .souffle .contact a{display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--paper); border:1px solid var(--rule); border-radius:var(--r-sm); padding:13px 15px; text-decoration:none; min-height:44px;}
+  .souffle .contact a:active{background:var(--accent-wash); border-color:var(--accent-line);}
+  .souffle .contact .k{font-size:10.5px; font-weight:660; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-4);}
+  .souffle .contact .v{font-size:14.5px; color:var(--ink); font-weight:560; text-align:right;}
+  .souffle .addr{font-size:12.5px; color:var(--ink-3); line-height:1.5; margin-top:10px;}
+
+  .souffle .sources{font-size:11px; line-height:1.55; color:var(--ink-4); margin-top:26px; padding-top:16px; border-top:1px solid var(--rule-soft);}
+</style>
+</head>
+<body>
+<div class="souffle">
+
+  <div class="topbar">
+    <div class="progress"><div class="progress__fill" id="souffle-progress"></div></div>
+    <nav class="navrow">
+      <a class="navchip" href="#s-avant">Avant</a>
+      <a class="navchip" href="#s-matin">Matin</a>
+      <a class="navchip" href="#s-journee">Journée</a>
+      <a class="navchip" href="#s-soir">Soir</a>
+      <a class="navchip" href="#s-jours">7 jours</a>
+      <a class="navchip" href="#s-questions">Questions</a>
+      <a class="navchip" href="#s-suite">Séance</a>
+    </nav>
+  </div>
+
+  <header class="hero">
+    <div class="hero__k">Elliot Amaru Breathwork · Marseille</div>
+    <h1 class="wordmark">SOUFFLE</h1>
+    <p class="hero__sub">Sept jours pour réapprendre à redescendre.</p>
+    <p class="hero__lede">Trois exercices de respiration, cinq minutes par jour. Le premier au réveil, le deuxième au moment où la tension monte, le troisième avant de dormir. Tu commences demain matin, sans rien acheter et sans rien installer.</p>
+    <div class="moments">
+      <div class="moment"><div class="moment__t">I · Matin</div><div class="moment__n">Le 5-5</div></div>
+      <div class="moment"><div class="moment__t">II · Journée</div><div class="moment__n">Le soupir</div></div>
+      <div class="moment"><div class="moment__t">III · Soir</div><div class="moment__n">Le 4-8</div></div>
+    </div>
+    <div class="stat-strip">
+      <div class="stat"><div class="stat__v">22 %</div><div class="stat__d">des Français pratiquent la pleine conscience</div></div>
+      <div class="stat"><div class="stat__v">27<small>e</small></div><div class="stat__d">sur 39 pays au classement mondial</div></div>
+      <div class="stat"><div class="stat__v">5 min</div><div class="stat__d">par jour, sept jours de suite</div></div>
+    </div>
+  </header>
+
+  <!-- AVANT DE COMMENCER -->
+  <section class="blk tint" id="s-avant">
+    <div class="eyebrow">Lis cette page une fois, elle t'évitera les erreurs</div>
+    <h2 class="h">Avant de commencer</h2>
+    <p class="lede">Trois exercices, trois moments. Le 5-5 au réveil pour poser la journée. Le soupir quand la tension monte. Le 4-8 au lit. Aucun ne demande de matériel, de tapis ni de silence complet.</p>
+
+    <h3 class="sub" style="margin-top:0">Les trois règles qui valent pour les trois exercices</h3>
+    <div class="cards">
+      <div class="card soft"><div class="card__k">I</div><h4>Tu inspires par le nez</h4><p>Le nez filtre l'air, le réchauffe et le ralentit. Il t'empêche de respirer trop vite sans que tu aies à y penser. L'expiration sort par le nez ou par la bouche, selon l'exercice.</p></div>
+      <div class="card soft"><div class="card__k">II</div><h4>Tu remplis à 60 %</h4><p>Une respiration lente reste confortable du début à la fin. Si ta poitrine tire, raccourcis les comptes. Un 4-4 fait le même travail qu'un 5-5 quand le 5-5 te crispe.</p></div>
+      <div class="card soft"><div class="card__k">III</div><h4>Le ventre bouge avant la poitrine</h4><p>Pose une main sur le ventre, une sur le sternum. À l'inspiration, la main du bas se lève en premier. Si seule celle du haut bouge, tu respires dans le mauvais étage, comme la moitié des gens toute la journée.</p></div>
+    </div>
+
+    <h3 class="sub">Où et comment</h3>
+    <p class="lede" style="margin-bottom:14px">Assis, dos droit, pieds au sol. Ou allongé sur le dos, genoux pliés si tu as mal aux lombaires. Les yeux fermés aident, ils ne sont obligatoires nulle part. Une pièce ordinaire suffit, le bruit de la rue aussi.</p>
+
+    <div class="callout accent">
+      <span class="callout__t">Ta mesure de départ, à prendre maintenant</span>
+      Assieds-toi une minute. Laisse ta respiration tranquille, sans la modifier, et compte tes inspirations. Note le chiffre quelque part.<br><br>
+      La plupart des adultes tournent entre <strong>12 et 20</strong>. Tu reprendras cette mesure au septième jour, c'est le seul repère chiffré du protocole.
+    </div>
+    <div class="callout warn">
+      <span class="callout__t">Quand demander l'avis d'un médecin avant de commencer</span>
+      Ces trois exercices sont lents, ils se pratiquent assis ou allongé, et ils relèvent du bien-être. Ils ne soignent rien et ne remplacent aucun traitement. <strong>Parles-en à ton médecin avant de commencer</strong> si tu es enceinte, si tu prends un traitement pour le cœur ou la tension, ou si tu vis avec de l'épilepsie, un glaucome, un asthme mal stabilisé ou une opération récente.
+    </div>
+
+    <p class="footnote"><strong>Pendant l'exercice</strong>, un vertige, des fourmillements dans les mains ou une gêne dans la poitrine veulent dire la même chose : tu respires trop grand ou trop vite. Reviens à ta respiration normale, attends une minute, reprends avec moitié moins d'amplitude.</p>
+  </section>
+
+  <!-- LE 5-5 -->
+  <section class="blk" id="s-matin">
+    <div class="eyebrow">01 · Le matin</div>
+    <h2 class="h">Le 5-5</h2>
+    <p class="lede">Six respirations par minute, le socle du protocole.</p>
+
+    <div class="chips">
+      <div class="chip"><div class="chip__k">Quand</div><div class="chip__v">Au réveil, avant le téléphone</div></div>
+      <div class="chip"><div class="chip__k">Durée</div><div class="chip__v">5 minutes, soit 30 respirations</div></div>
+      <div class="chip"><div class="chip__k">Où passe l'air</div><div class="chip__v">Nez à l'inspiration, nez à l'expiration</div></div>
+      <div class="chip"><div class="chip__k">Position</div><div class="chip__v">Assis, dos droit, pieds au sol</div></div>
+    </div>
+
+    <div class="geste">
+      <div class="label">Le geste</div>
+      Inspire par le nez en comptant jusqu'à cinq. Expire par le nez en comptant jusqu'à cinq. <strong>Enchaîne sans pause entre les deux. Trente fois.</strong>
+    </div>
+
+    <div class="pacer" data-pacer='{"cycles":30,"phases":[{"label":"inspire","dur":5,"scale":1.55},{"label":"expire","dur":5,"scale":1}]}'>
+      <div class="pacer__stage"><div class="pacer__ring"></div><div class="pacer__word">prêt</div></div>
+      <div class="pacer__row"><button class="pacer__btn" data-action="start">Lancer le guide</button><button class="pacer__btn ghost" data-action="stop" hidden>Arrêter</button></div>
+      <div class="pacer__cycles">cycle <span class="num" data-cyclecount>0</span> / 30</div>
+    </div>
+
+    <h3 class="sub">Pourquoi cinq et cinq</h3>
+    <p class="lede" style="margin-bottom:14px">Cinq secondes d'inspiration plus cinq secondes d'expiration donnent six respirations par minute. À ce rythme, ton cœur se met à osciller avec ta respiration : il accélère quand tu inspires, il ralentit quand tu expires, et l'écart entre les deux devient large. Les chercheurs appellent ce point la <strong>fréquence de résonance</strong>. Elle produit la plus grande amplitude de variabilité cardiaque mesurable, et elle se situe autour de six respirations par minute chez la plupart des gens, entre 4,5 et 7 selon la personne.</p>
+
+    <h3 class="sub">Ce que tu vas sentir</h3>
+    <ul class="list">
+      <li>Au bout de deux minutes, l'expiration devient plus facile que l'inspiration</li>
+      <li>Les épaules descendent d'un cran sans que tu leur demandes</li>
+      <li>Vers la troisième minute, beaucoup de gens bâillent. C'est le signe que le corps a compris</li>
+    </ul>
+
+    <p class="footnote"><strong>Les deux erreurs qui reviennent tout le temps.</strong> Inspirer à ras bord : le 5-5 se fait à 60 % de ta capacité, une inspiration pleine te force à souffler vite pour t'en débarrasser et le rythme casse. Compter trop vite : cinq secondes, c'est long quand on est tendu, compte « un et, deux et, trois et, quatre et, cinq et », ou laisse le guide ci-dessus compter pour toi. <strong>Et si cinq te paraît infaisable</strong>, fais 4-4 les trois premiers jours, tu passeras à 5-5 le quatrième.</p>
+  </section>
+
+  <!-- LE SOUPIR -->
+  <section class="blk tint" id="s-journee">
+    <div class="eyebrow">02 · Dans la journée</div>
+    <h2 class="h">Le soupir</h2>
+    <p class="lede">Trente secondes, à sortir quand ça monte.</p>
+
+    <div class="chips">
+      <div class="chip"><div class="chip__k">Quand</div><div class="chip__v">Quand la tension monte</div></div>
+      <div class="chip"><div class="chip__k">Durée</div><div class="chip__v">5 cycles, 30 secondes</div></div>
+      <div class="chip"><div class="chip__k">Où passe l'air</div><div class="chip__v">Nez à l'inspiration, bouche à l'expiration</div></div>
+      <div class="chip"><div class="chip__k">Position</div><div class="chip__v">Debout ou assis, n'importe où</div></div>
+    </div>
+
+    <div class="steps">
+      <div class="step"><div class="step__n">1</div><p>Inspire par le nez, à peu près à moitié.</p></div>
+      <div class="step"><div class="step__n">2</div><p>Sans rien laisser sortir, prends une <strong>deuxième inspiration courte</strong> par le nez, par-dessus la première. Le haut de la poitrine s'ouvre d'un coup.</p></div>
+      <div class="step"><div class="step__n">3</div><p>Laisse tout sortir par la bouche, sur <strong>deux fois plus de temps</strong> que ce que tu viens d'inspirer.</p></div>
+      <div class="step"><div class="step__n">4</div><p>Recommence. Cinq fois suffisent.</p></div>
+    </div>
+
+    <div class="pacer" data-pacer='{"cycles":5,"phases":[{"label":"inspire","dur":2,"scale":1.35},{"label":"+ court","dur":1,"scale":1.6},{"label":"expire","dur":6,"scale":1}]}'>
+      <div class="pacer__stage"><div class="pacer__ring"></div><div class="pacer__word">prêt</div></div>
+      <div class="pacer__row"><button class="pacer__btn" data-action="start">Lancer le guide</button><button class="pacer__btn ghost" data-action="stop" hidden>Arrêter</button></div>
+      <div class="pacer__cycles">cycle <span class="num" data-cyclecount>0</span> / 5</div>
+    </div>
+
+    <h3 class="sub">Pourquoi ça redescend vite</h3>
+    <p class="lede" style="margin-bottom:0">Ton corps fait ce geste tout seul, quand tu pleures et deux ou trois fois par heure pendant que tu dors. La double inspiration rouvre les petits sacs d'air qui s'affaissent au fil de la journée, et la longue expiration ralentit le cœur.</p>
+
+    <div class="research">
+      <h4>Ce que la recherche en dit</h4>
+      <p>En 2023, une équipe de l'université Stanford a suivi <strong>108 personnes pendant un mois</strong>, cinq minutes par jour : soit l'un de trois exercices de respiration, soit une méditation de pleine conscience. Le soupir cyclique, celui que tu viens de lire, a produit la plus forte amélioration de l'humeur et la plus forte baisse de la fréquence respiratoire, méditation comprise.</p>
+      <p class="src">Balban et coll., Cell Reports Medicine, janvier 2023. L'étude mesure l'humeur et l'état d'éveil physiologique, elle ne traite aucune maladie.</p>
+    </div>
+
+    <h3 class="sub">Ce que tu vas sentir, et la seule erreur possible</h3>
+    <p class="lede" style="margin-bottom:0">Une chute. Le corps redescend d'un cran en trois ou quatre cycles, et tu la sens dans les épaules avant de la penser. C'est le seul des trois que tu peux faire devant quelqu'un sans qu'il s'en aperçoive. <strong>L'erreur consiste à souffler d'un coup</strong>, comme pour vider un ballon. L'expiration se relâche, elle ne se pousse pas.</p>
+
+    <p class="footnote"><strong>Les moments où il sert le plus.</strong> Dans la voiture avant d'entrer quelque part. Entre deux réunions. Avant un appel que tu repousses depuis trois jours. À la seconde où quelqu'un vient de te dire une phrase de travers.</p>
+  </section>
+
+  <!-- LE 4-8 -->
+  <section class="blk" id="s-soir">
+    <div class="eyebrow">03 · Le soir</div>
+    <h2 class="h">Le 4-8</h2>
+    <p class="lede">Deux minutes, au lit, lumière éteinte.</p>
+
+    <div class="chips">
+      <div class="chip"><div class="chip__k">Quand</div><div class="chip__v">Une fois couché, lumière éteinte</div></div>
+      <div class="chip"><div class="chip__k">Durée</div><div class="chip__v">10 cycles, environ 2 minutes</div></div>
+      <div class="chip"><div class="chip__k">Où passe l'air</div><div class="chip__v">Nez à l'inspiration, bouche à l'expiration</div></div>
+      <div class="chip"><div class="chip__k">Position</div><div class="chip__v">Allongé, sur le dos ou le côté</div></div>
+    </div>
+
+    <div class="geste">
+      <div class="label">Le geste</div>
+      Inspire par le nez en comptant jusqu'à quatre. Expire par la bouche, lèvres à peine entrouvertes, en comptant jusqu'à huit. <strong>Dix fois.</strong> Si tu perds le compte, c'est que ça fonctionne.
+    </div>
+
+    <div class="pacer" data-pacer='{"cycles":10,"phases":[{"label":"inspire","dur":4,"scale":1.5},{"label":"expire","dur":8,"scale":1}]}'>
+      <div class="pacer__stage"><div class="pacer__ring"></div><div class="pacer__word">prêt</div></div>
+      <div class="pacer__row"><button class="pacer__btn" data-action="start">Lancer le guide</button><button class="pacer__btn ghost" data-action="stop" hidden>Arrêter</button></div>
+      <div class="pacer__cycles">cycle <span class="num" data-cyclecount>0</span> / 10</div>
+    </div>
+
+    <h3 class="sub">Pourquoi l'expiration doit être deux fois plus longue</h3>
+    <p class="lede" style="margin-bottom:14px">Ton cœur ralentit à chaque expiration et accélère à chaque inspiration. Ce n'est pas une image : le nerf vague reprend la main dès que l'expiration dure plus longtemps que l'inspiration. Un rapport de un à deux installe l'effet en quelques cycles, et c'est ce rapport que tu cherches, plus que les chiffres exacts. Le 5-5 du matin sert à te poser. Le 4-8 du soir sert à te faire lâcher. Même famille, deux dosages.</p>
+
+    <h3 class="sub">Ce que tu vas sentir</h3>
+    <ul class="list">
+      <li>Vers le sixième ou septième cycle, le compte devient flou</li>
+      <li>Une lourdeur dans les jambes et dans les mâchoires</li>
+      <li>Beaucoup de gens ne se souviennent pas d'avoir fini les dix</li>
+    </ul>
+
+    <div class="callout" style="background:var(--paper-3); border:1px solid var(--rule); margin-top:18px;">
+      <span class="callout__t" style="color:var(--ink-3)">Si huit secondes te coupent le souffle</span>
+      Fais 4-6 pendant une semaine, puis rallonge d'une seconde. Une expiration qui se termine dans l'urgence réveille au lieu d'endormir, ce qui est le contraire de ce qu'on cherche ici.
+    </div>
+    <div class="callout accent">
+      <span class="callout__t">Si tu te réveilles à 3 h du matin</span>
+      Reprends le 4-8 sur place, sans allumer, sans regarder l'heure. Dix cycles. S'ils ne suffisent pas, enchaîne dix de plus. Le but n'est pas de te rendormir de force, il est de sortir ton corps du mode alerte, et le sommeil suit ou ne suit pas.
+    </div>
+  </section>
+
+  <!-- CALENDRIER -->
+  <section class="blk tint" id="s-jours">
+    <div class="eyebrow">Le seul engagement du protocole</div>
+    <h2 class="h">Les sept jours</h2>
+    <p class="lede">Sept jours à la suite. Cinq minutes tenues sept jours de suite valent mieux que trente minutes tenues deux fois. Si tu sautes un jour, tu reprends au lendemain sans recommencer à zéro. Coche au fil des jours, c'est gardé sur ce téléphone.</p>
+
+    <div class="tracker__head"><h3 class="sub" style="margin:0">Le calendrier</h3><span class="tracker__prog"><span class="num" id="souffle-tracker-count">0</span> / 21 séances</span></div>
+
+    <div id="souffle-tracker"></div>
+
+    <h3 class="sub">Les trois repères à observer, sans rien mesurer</h3>
+    <div class="marks">
+      <div class="mark"><h4>La mâchoire au réveil</h4><p>Le premier endroit où la tension se loge, et le premier à lâcher. Note si tu te réveilles dents serrées le jour 1, puis le jour 7.</p></div>
+      <div class="mark"><h4>Le délai d'endormissement</h4><p>Le temps entre le moment où tu poses le téléphone et celui où tu ne sais plus. À la louche, en minutes.</p></div>
+      <div class="mark accent" style="grid-column:1/-1"><h4>Ta fréquence respiratoire au repos</h4><p>Le seul chiffre du protocole. Tu l'as noté avant le jour 1. Reprends-le le jour 7, dans les mêmes conditions : assis, une minute, sans modifier ta respiration.</p></div>
+    </div>
+
+    <div class="callout pos">
+      <strong>Une baisse de deux ou trois respirations par minute est courante après une semaine.</strong> C'est le signe le plus fiable que ton système nerveux a changé de réglage, et il ne coûte rien à mesurer.
+    </div>
+
+    <p class="footnote"><strong>Après les sept jours.</strong> Garde le 5-5 du matin, il fait 80 % du travail. Le soupir devient un outil que tu sors quand tu en as besoin. Le 4-8 revient les soirs où la tête tourne encore. Rien ne t'oblige à tenir les trois pour toujours.</p>
+  </section>
+
+  <!-- QUESTIONS -->
+  <section class="blk" id="s-questions">
+    <div class="eyebrow">Ce qui peut arriver</div>
+    <h2 class="h">Les questions que tout le monde me pose</h2>
+
+    <div>
+      <details class="qa"><summary>« Je m'endors pendant l'exercice du matin. »</summary><dd>Tu manques de sommeil, et ton corps te le dit dès que tu lui laisses trois minutes. Fais le 5-5 assis, dos contre un mur, pieds au sol. Et prends l'information au sérieux.</dd></details>
+      <details class="qa"><summary>« Je bâille sans arrêt. »</summary><dd>Bon signe. Le bâillement accompagne le basculement vers le mode repos. Laisse-le venir, ne le retiens pas.</dd></details>
+      <details class="qa"><summary>« J'ai des fourmis dans les mains ou autour de la bouche. »</summary><dd>Tu respires trop grand ou trop vite. Réduis l'amplitude de moitié et rallonge un peu l'expiration. Les sensations partent en une minute.</dd></details>
+      <details class="qa"><summary>« Ça ne me fait rien. »</summary><dd>Regarde tes épaules et ta mâchoire au lieu de guetter ta tête. Le relâchement se voit dans le corps plusieurs jours avant de se sentir dans le mental. Et compare ta fréquence respiratoire du jour 7 avec celle du jour 1 avant de conclure.</dd></details>
+      <details class="qa"><summary>« Je n'ai pas cinq minutes le matin. »</summary><dd>Fais-en trois. Trois minutes tenues sept jours de suite font plus qu'une intention de cinq. Le 5-5 tient pendant que la bouilloire chauffe.</dd></details>
+      <details class="qa"><summary>« Des émotions montent. »</summary><dd>Ça arrive, surtout sur le soupir, et c'est courant. Laisse passer sans chercher à comprendre sur le moment, reviens à une respiration normale, arrête si c'est trop. Une émotion qui remonte pendant une respiration lente n'a rien d'anormal.</dd></details>
+      <details class="qa"><summary>« Je peux le faire enceinte ? »</summary><dd>Ces trois exercices sont lents et sans rétention d'air. Demande quand même l'avis de la personne qui suit ta grossesse avant de commencer, et laisse tomber le 4-8 si l'expiration longue te gêne.</dd></details>
+      <details class="qa"><summary>« Combien de temps avant que ça se voie ? »</summary><dd>Le soupir agit en trois ou quatre cycles, tu le sens le premier jour. Le 5-5 travaille en fond et se lit sur ta fréquence respiratoire au bout d'une semaine. Le sommeil met souvent plus longtemps que le reste.</dd></details>
+    </div>
+
+    <div class="verdicts">
+      <div class="verdict warn"><h4>Ce que ce protocole ne fait pas</h4><p>Il ne soigne rien. Il ne remplace ni un traitement, ni un suivi psychologique, ni l'avis d'un médecin. Si tu traverses quelque chose de lourd en ce moment, une anxiété qui t'empêche de fonctionner, un sommeil détruit depuis des mois, des idées noires, parle à un professionnel de santé. Ces exercices tiennent leur place à côté d'un accompagnement, jamais à sa place.</p></div>
+      <div class="verdict pos"><h4>Ce qu'il fait, et c'est déjà beaucoup</h4><p>Il te rend la main sur un système que tu croyais automatique. La respiration est la seule fonction du système nerveux autonome que tu peux piloter volontairement. Sept jours suffisent à installer le réflexe, et le réflexe reste disponible ensuite, dans la file d'attente comme à trois heures du matin.</p></div>
+    </div>
+  </section>
+
+  <!-- LA SUITE -->
+  <section class="blk tint" id="s-suite">
+    <div class="eyebrow">Si tu veux aller plus loin que cinq minutes</div>
+    <h2 class="h">Ce qui se passe en séance</h2>
+    <p class="lede">Les trois exercices que tu viens de lire travaillent en surface, et c'est leur intérêt. Tu les fais seul, n'importe où, tous les jours, sans que personne t'accompagne.</p>
+    <p class="lede">La respiration consciente et connectée, celle que je guide au studio, fait autre chose. Quarante-cinq minutes de respiration continue par la bouche, sans pause entre l'inspiration et l'expiration, portée par une musique que je compose pour la séance. Le mental finit par lâcher parce qu'il n'a plus rien à tenir, le corps prend le relais et remonte ce qui était rangé depuis longtemps. C'est plus fort que ce que tu peux faire seul dans ton salon, et c'est pour ça que ça se fait à deux, avec quelqu'un qui ajuste en temps réel.</p>
+
+    <div class="who">
+      <div class="label">Qui je suis</div>
+      <p>J'ai obtenu ma certification par l'International Breathwork Foundation, après 160 heures de formation avec Evolution of Breath, cinq ans de pratique et plus de 2 000 heures d'enseignement. J'accompagne à Marseille depuis mi-2026.</p>
+    </div>
+
+    <div class="offers">
+      <div class="offer"><div class="offer__top"><span class="offer__t">Le samedi matin</span><span class="offer__v">50 €</span></div><p>En groupe, de 9h à 10h30, au studio du 58 boulevard Bompard. Aucune expérience demandée, j'explique tout sur place. C'est la façon la plus simple d'essayer.</p></div>
+      <div class="offer hl"><div class="offer__top"><span class="offer__t">En individuel</span><span class="offer__v">110 €</span></div><p>Deux heures, rien que pour toi. On parle avant, je guide la respiration, on prend le temps de reposer ce qui est remonté. Pour celles et ceux qui portent quelque chose de précis.</p></div>
+    </div>
+
+    <div class="callout accent" style="margin-top:16px">
+      <span class="callout__t">Une question avant de venir ?</span>
+      Écris-moi en message direct sur Instagram, ou appelle. Je réponds moi-même. À très vite.
+    </div>
+
+    <div class="contact">
+      <a href="tel:+33766357674"><span class="k">Téléphone</span><span class="v">07 66 35 76 74</span></a>
+      <a href="mailto:elliot.breathwork@gmail.com"><span class="k">Email</span><span class="v">elliot.breathwork@gmail.com</span></a>
+      <a href="https://calendly.com/elliot-breathwork" target="_blank" rel="noopener"><span class="k">Réservation</span><span class="v">calendly.com/elliot-breathwork</span></a>
+      <a href="https://www.instagram.com/theinnerstatelab/" target="_blank" rel="noopener"><span class="k">Instagram</span><span class="v">@theinnerstatelab</span></a>
+    </div>
+    <p class="addr">Studio : 58 boulevard Bompard, 13007 Marseille. L'impasse à droite de la pizzeria Les deux frangins.</p>
+
+    <p class="sources">Chiffres de pratique : WIN World Survey 2025, menée en France par BVA Xsight, 34 945 personnes dans 39 pays dont 1 001 Français. Fréquence de résonance : Lehrer et Gevirtz, Heart rate variability biofeedback, Frontiers in Psychology, 2014. Soupir cyclique : Balban, Neri, Kogon et coll., Brief structured respiration practices enhance mood and reduce physiological arousal, Cell Reports Medicine, janvier 2023, 108 participants sur un mois. — Ce document est offert et se partage librement. Il décrit une pratique de bien-être et ne constitue ni un avis médical, ni une promesse de résultat. © Elliot Amaru, 2026.</p>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  var root = document.querySelector('.souffle');
+  if (!root) return;
+
+  /* scroll progress */
+  var fill = document.getElementById('souffle-progress');
+  function updateProgress(){
+    var h = document.documentElement;
+    var scrollTop = h.scrollTop || document.body.scrollTop;
+    var height = (h.scrollHeight || document.body.scrollHeight) - h.clientHeight;
+    var pct = height > 0 ? Math.min(100, Math.max(0, (scrollTop / height) * 100)) : 0;
+    if (fill) fill.style.width = pct + '%';
+  }
+  document.addEventListener('scroll', updateProgress, {passive:true});
+  updateProgress();
+
+  root.querySelectorAll('.navchip').forEach(function(a){
+    a.addEventListener('click', function(e){
+      var id = a.getAttribute('href').slice(1);
+      var target = document.getElementById(id);
+      if (target){
+        e.preventDefault();
+        target.scrollIntoView({behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'start'});
+      }
+    });
+  });
+
+  /* breathing pacers */
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  root.querySelectorAll('[data-pacer]').forEach(function(pacer){
+    var cfg = JSON.parse(pacer.getAttribute('data-pacer'));
+    var ring = pacer.querySelector('.pacer__ring');
+    var word = pacer.querySelector('.pacer__word');
+    var startBtn = pacer.querySelector('[data-action="start"]');
+    var stopBtn = pacer.querySelector('[data-action="stop"]');
+    var cycleEl = pacer.querySelector('[data-cyclecount]');
+    var timer = null, running = false;
+
+    function runPhase(cycle, phaseIdx){
+      if (!running) return;
+      if (cycle > cfg.cycles){
+        stop();
+        word.textContent = 'terminé';
+        return;
+      }
+      var phase = cfg.phases[phaseIdx];
+      word.textContent = phase.label;
+      ring.style.transitionDuration = reduceMotion ? '.2s' : phase.dur + 's';
+      ring.style.transform = 'scale(' + phase.scale + ')';
+      cycleEl.textContent = cycle;
+      timer = setTimeout(function(){
+        var nextPhase = phaseIdx + 1;
+        if (nextPhase >= cfg.phases.length){
+          runPhase(cycle + 1, 0);
+        } else {
+          runPhase(cycle, nextPhase);
+        }
+      }, phase.dur * 1000);
+    }
+
+    function start(){
+      running = true;
+      startBtn.hidden = true;
+      stopBtn.hidden = false;
+      runPhase(1, 0);
+    }
+    function stop(){
+      running = false;
+      clearTimeout(timer);
+      startBtn.hidden = false;
+      stopBtn.hidden = true;
+      ring.style.transitionDuration = '1s';
+      ring.style.transform = 'scale(1)';
+      word.textContent = 'prêt';
+      cycleEl.textContent = '0';
+    }
+    startBtn.addEventListener('click', start);
+    stopBtn.addEventListener('click', stop);
+  });
+
+  /* 7-day tracker, persisted in localStorage */
+  var trackerHost = document.getElementById('souffle-tracker');
+  var countEl = document.getElementById('souffle-tracker-count');
+  if (trackerHost){
+    var STORE_KEY = 'souffle-protocole-tracker-v1';
+    var state = {};
+    try { state = JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); } catch(e){ state = {}; }
+
+    function save(){
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch(e){}
+      updateCount();
+    }
+    function updateCount(){
+      var n = 0;
+      for (var d = 1; d <= 7; d++){
+        var day = state['j'+d] || {};
+        if (day.matin) n++; if (day.soupir) n++; if (day.soir) n++;
+      }
+      if (countEl) countEl.textContent = n;
+    }
+
+    var html = '';
+    for (var d = 1; d <= 7; d++){
+      var key = 'j' + d;
+      var day = state[key] || {};
+      html += '<div class="day" data-day="'+d+'">'
+        + '<div class="day__top"><span class="day__t">Jour '+d+'</span><span class="day__hint">'+(d===7 ? 'reprends ta mesure' : '')+'</span></div>'
+        + '<div class="day__row">'
+        + '<label class="tick" data-k="matin"><input type="checkbox" '+(day.matin?'checked':'')+'> Matin</label>'
+        + '<label class="tick" data-k="soupir"><input type="checkbox" '+(day.soupir?'checked':'')+'> Soupir</label>'
+        + '<label class="tick" data-k="soir"><input type="checkbox" '+(day.soir?'checked':'')+'> Soir</label>'
+        + '</div>'
+        + '<input class="day__note" type="text" maxlength="80" placeholder="Ce que j’ai remarqué" value="'+(day.note ? day.note.replace(/"/g,'&quot;') : '')+'">'
+        + '</div>';
+    }
+    trackerHost.innerHTML = html;
+
+    trackerHost.querySelectorAll('.day').forEach(function(dayEl){
+      var d = dayEl.getAttribute('data-day');
+      var key = 'j' + d;
+      state[key] = state[key] || {};
+      dayEl.querySelectorAll('.tick').forEach(function(tick){
+        var k = tick.getAttribute('data-k');
+        var input = tick.querySelector('input');
+        function sync(){ tick.classList.toggle('done', input.checked); }
+        sync();
+        input.addEventListener('change', function(){
+          state[key][k] = input.checked;
+          sync();
+          save();
+        });
+      });
+      var noteInput = dayEl.querySelector('.day__note');
+      noteInput.addEventListener('input', function(){
+        state[key].note = noteInput.value;
+        save();
+      });
+    });
+    updateCount();
+  }
+})();
+</script>
+</body>
+</html>
